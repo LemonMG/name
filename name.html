@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机H5网页取名程序</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"], select, input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .radio-group {
+            display: flex;
+            gap: 20px;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 8px;
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #2196F3;
+        }
+        button.secondary:hover {
+            background-color: #0b7dda;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .name-suggestion {
+            padding: 15px;
+            margin: 10px 0;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .name-explanation {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .explanation-title {
+            font-weight: bold;
+            color: #333;
+        }
+        .pinyin {
+            color: #666;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .copy-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>手机H5网页取名程序</h1>
+        
+        <div class="form-group">
+            <label for="surname">姓氏：</label>
+            <input type="text" id="surname" placeholder="请输入姓氏" maxlength="2">
+        </div>
+        
+        <div class="form-group">
+            <label>名字字数：</label>
+            <div class="radio-group">
+                <label><input type="radio" name="nameLength" value="1" checked> 1个字</label>
+                <label><input type="radio" name="nameLength" value="2"> 2个字</label>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button id="generateName">生成名字</button>
+        </div>
+        
+        <div id="result">
+            <h2>生成结果</h2>
+            <div id="nameResults">
+                <!-- 名字结果将在这里显示 -->
+                <p>请输入信息并点击按钮生成名字</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 汉字转拼音功能（简化版，支持常用汉字）
+        const pinyinDict = {
+            '金': 'jīn', '鑫': 'xīn', '锋': 'fēng', '钊': 'zhāo', '钢': 'gāng', '铁': 'tiě', '钧': 'jūn', '铭': 'míng', '锐': 'ruì', '锟': 'kūn', '键': 'jiàn', '钟': 'zhōng', '镇': 'zhèn', '钗': 'chāi', '钻': 'zuàn', '银': 'yín', '锡': 'xī', '锦': 'jǐn',
+            '木': 'mù', '林': 'lín', '森': 'sēn', '树': 'shù', '松': 'sōng', '柏': 'bǎi', '杨': 'yáng', '柳': 'liǔ', '梅': 'méi', '桂': 'guì', '桃': 'táo', '李': 'lǐ', '槐': 'huái', '梧': 'wú', '桐': 'tóng', '桦': 'huà', '榕': 'róng', '樱': 'yīng',
+            '水': 'shuǐ', '江': 'jiāng', '河': 'hé', '海': 'hǎi', '洋': 'yáng', '波': 'bō', '涛': 'tāo', '浪': 'làng', '潮': 'cháo', '涌': 'yǒng', '流': 'liú', '溪': 'xī', '湖': 'hú', '池': 'chí', '泉': 'quán', '清': 'qīng', '洁': 'jié', '浩': 'hào',
+            '火': 'huǒ', '炎': 'yán', '焱': 'yàn', '烈': 'liè', '烟': 'yān', '焰': 'yàn', '炫': 'xuàn', '焕': 'huàn', '烨': 'yè', '煜': 'yù', '燃': 'rán', '烽': 'fēng', '煌': 'huáng', '照': 'zhào', '灿': 'càn', '烁': 'shuò', '明': 'míng',
+            '土': 'tǔ', '地': 'dì', '坤': 'kūn', '培': 'péi', '基': 'jī', '坦': 'tǎn', '坡': 'pō', '塬': 'yuán', '坊': 'fāng', '域': 'yù', '疆': 'jiāng', '坪': 'píng', '坝': 'bà', '堡': 'bǎo', '塔': 'tǎ', '坛': 'tán', '垒': 'lěi', '壁': 'bì',
+            '伟': 'wěi', '芳': 'fāng', '娜': 'nà', '秀': 'xiù', '英': 'yīng', '敏': 'mǐn', '静': 'jìng', '强': 'qiáng', '磊': 'lěi', '军': 'jūn', '洋': 'yáng', '勇': 'yǒng', '艳': 'yàn', '杰': 'jié', '娟': 'juān', '涛': 'tāo', '丽': 'lì',
+            '霞': 'xiá', '莉': 'lì', '燕': 'yàn', '玲': 'líng', '玉': 'yù', '华': 'huá', '刚': 'gāng', '明': 'míng', '超': 'chāo', '文': 'wén', '成': 'chéng', '梅': 'méi', '兰': 'lán', '竹': 'zhú', '菊': 'jú', '山': 'shān', '日': 'rì',
+            '月': 'yuè', '星': 'xīng', '云': 'yún', '春': 'chūn', '夏': 'xià', '秋': 'qiū', '冬': 'dōng', '东': 'dōng', '南': 'nán', '西': 'xī', '北': 'běi', '仁': 'rén', '义': 'yì', '礼': 'lǐ', '智': 'zhì', '信': 'xìn', '忠': 'zhōng',
+            '孝': 'xiào', '爱': 'ài', '和': 'hé', '平': 'píng', '温': 'wēn', '良': 'liáng', '恭': 'gōng', '俭': 'jiǎn', '让': 'ràng', '智': 'zhì', '勇': 'yǒng', '双': 'shuāng', '全': 'quán', '德': 'dé', '才': 'cái', '兼': 'jiān', '备': 'bèi',
+            '慧': 'huì', '聪': 'cōng', '睿': 'ruì', '思': 'sī', '想': 'xiǎng', '念': 'niàn', '怀': 'huái', '志': 'zhì', '向': 'xiàng', '意': 'yì', '愿': 'yuàn', '望': 'wàng', '希': 'xī', '盼': 'pàn', '期': 'qī', '待': 'dài', '梦': 'mèng',
+            '理': 'lǐ', '标': 'biāo', '追': 'zhuī', '求': 'qiú', '进': 'jìn', '步': 'bù', '发': 'fā', '展': 'zhǎn', '成': 'chéng', '长': 'zhǎng', '努': 'nǔ', '力': 'lì', '奋': 'fèn', '斗': 'dòu', '拼': 'pīn', '搏': 'bó', '坚': 'jiān',
+            '敢': 'gǎn', '毅': 'yì', '恒': 'héng', '心': 'xīn', '耐': 'nài', '细': 'xì', '认': 'rèn', '真': 'zhēn', '负': 'fù', '责': 'zé', '诚': 'chéng', '实': 'shí', '守': 'shǒu', '友': 'yǒu', '善': 'shàn', '和': 'hé', '蔼': 'ǎi',
+            '亲': 'qīn', '宽': 'kuān', '容': 'róng', '大': 'dà', '度': 'dù', '仁': 'rén', '慈': 'cí', '悲': 'bēi', '同': 'tóng', '情': 'qíng', '理': 'lǐ', '解': 'jiě', '体': 'tǐ', '谅': 'liàng', '关': 'guān', '帮': 'bāng', '助': 'zhù',
+            '支': 'zhī', '持': 'chí', '鼓': 'gǔ', '励': 'lì', '赞': 'zàn', '扬': 'yáng', '表': 'biǎo', '称': 'chēng', '美': 'měi', '好': 'hǎo', '优': 'yōu', '秀': 'xiù', '杰': 'jié', '出': 'chū', '卓': 'zhuó', '越': 'yuè', '异': 'yì',
+            '凡': 'fán', '众': 'zhòng', '同': 'tóng', '独': 'dú', '特': 'tè', '树': 'shù', '帜': 'zhì', '标': 'biāo', '新': 'xīn', '立': 'lì', '异': 'yì', '时': 'shí', '俱': 'jù', '进': 'jìn', '增': 'zēng', '新': 'xīn', '明': 'míng'
+        };
+
+        // 五行对应的汉字字典
+        const fiveElementsDict = {
+            '金': ['金', '鑫', '锋', '钊', '钢', '铁', '钧', '铭', '锐', '锟', '键', '钟', '镇', '钗', '钻', '银', '锡', '锦'],
+            '木': ['木', '林', '森', '树', '松', '柏', '杨', '柳', '梅', '桂', '桃', '李', '槐', '梧', '桐', '桦', '榕', '樱'],
+            '水': ['水', '江', '河', '海', '洋', '波', '涛', '浪', '潮', '涌', '流', '溪', '湖', '池', '泉', '清', '洁', '浩'],
+            '火': ['火', '炎', '焱', '烈', '烟', '焰', '炫', '焕', '烨', '煜', '燃', '烽', '煌', '照', '灿', '烁', '明'],
+            '土': ['土', '地', '坤', '培', '基', '坦', '坡', '塬', '坊', '域', '疆', '坪', '坝', '堡', '塔', '坛', '垒', '壁']
+        };
+
+        // 名字寓意解释
+        const nameMeaningDict = {
+            '金': '象征财富、坚强、尊贵',
+            '木': '象征生命力、成长、希望',
+            '水': '象征智慧、灵活、包容',
+            '火': '象征热情、活力、光明',
+            '土': '象征稳重、踏实、包容',
+            '林': '象征繁荣、茂盛、团结',
+            '森': '象征繁荣、茂盛、长寿',
+            '松': '象征坚韧、长寿、不屈',
+            '柏': '象征坚韧、长寿、正直',
+            '梅': '象征坚韧、高洁、吉祥',
+            '桂': '象征高贵、吉祥、美好',
+            '江': '象征广阔、包容、智慧',
+            '河': '象征包容、智慧、长寿',
+            '海': '象征广阔、包容、智慧',
+            '洋': '象征广阔、包容、智慧',
+            '波': '象征灵动、智慧、自由',
+            '涛': '象征力量、激情、自由',
+            '清': '象征纯洁、智慧、正直',
+            '洁': '象征纯洁、正直、高尚',
+            '浩': '象征广阔、包容、智慧',
+            '明': '象征光明、智慧、正直',
+            '亮': '象征光明、活力、希望',
+            '辉': '象征光明、荣耀、成功',
+            '灿': '象征光明、活力、美好',
+            '烁': '象征光明、活力、美好',
+            '智': '象征智慧、聪明、才华',
+            '慧': '象征智慧、聪明、才华',
+            '聪': '象征聪明、智慧、灵敏',
+            '明': '象征聪明、智慧、正直',
+            '睿': '象征智慧、聪明、深邃',
+            '思': '象征思考、智慧、才华',
+            '想': '象征思考、理想、抱负',
+            '志': '象征志向、抱负、决心',
+            '向': '象征志向、方向、抱负',
+            '意': '象征理想、抱负、心意',
+            '愿': '象征愿望、理想、美好',
+            '望': '象征希望、理想、抱负',
+            '希': '象征希望、美好、未来',
+            '盼': '象征希望、期待、美好',
+            '梦': '象征理想、美好、未来',
+            '理': '象征理性、智慧、道理',
+            '标': '象征目标、理想、追求',
+            '追': '象征追求、理想、努力',
+            '求': '象征追求、理想、努力',
+            '进': '象征进步、进取、努力',
+            '步': '象征进步、成长、努力',
+            '发': '象征发展、成长、成功',
+            '展': '象征发展、成长、未来',
+            '成': '象征成功、成长、成就',
+            '长': '象征成长、进步、长寿',
+            '努': '象征努力、奋斗、坚持',
+            '力': '象征力量、努力、奋斗',
+            '奋': '象征奋斗、努力、进取',
+            '斗': '象征奋斗、努力、进取',
+            '拼': '象征拼搏、努力、奋斗',
+            '搏': '象征拼搏、努力、奋斗',
+            '坚': '象征坚强、坚韧、毅力',
+            '强': '象征坚强、强大、自信',
+            '勇': '象征勇敢、坚强、自信',
+            '敢': '象征勇敢、果断、自信',
+            '毅': '象征毅力、坚韧、决心',
+            '恒': '象征恒心、坚持、毅力',
+            '心': '象征心灵、情感、善良',
+            '耐': '象征耐心、坚持、毅力',
+            '细': '象征细心、认真、细致',
+            '认': '象征认真、负责、诚实',
+            '真': '象征真实、诚实、认真',
+            '负': '象征负责、担当、可靠',
+            '责': '象征责任、担当、可靠',
+            '诚': '象征诚实、真诚、正直',
+            '实': '象征实在、诚实、可靠',
+            '守': '象征守信、坚持、可靠',
+            '信': '象征诚信、可靠、信任',
+            '友': '象征友好、善良、真诚',
+            '善': '象征善良、友好、美好',
+            '和': '象征和谐、友好、善良',
+            '蔼': '象征和蔼、友好、善良',
+            '亲': '象征亲切、友好、善良',
+            '宽': '象征宽容、包容、大度',
+            '容': '象征包容、宽容、大度',
+            '大': '象征大气、包容、大度',
+            '度': '象征大度、包容、智慧',
+            '仁': '象征仁爱、善良、高尚',
+            '慈': '象征慈爱、善良、高尚',
+            '悲': '象征慈悲、善良、高尚',
+            '同': '象征同情、善良、友好',
+            '情': '象征情感、善良、真诚',
+            '理': '象征理解、理性、智慧',
+            '解': '象征理解、包容、智慧',
+            '体': '象征体谅、理解、善良',
+            '谅': '象征体谅、理解、宽容',
+            '关': '象征关心、关爱、善良',
+            '帮': '象征帮助、善良、友好',
+            '助': '象征帮助、善良、友好',
+            '支': '象征支持、帮助、友好',
+            '持': '象征支持、帮助、坚持',
+            '鼓': '象征鼓励、支持、激励',
+            '励': '象征鼓励、激励、支持',
+            '赞': '象征赞美、鼓励、支持',
+            '扬': '象征表扬、鼓励、支持',
+            '表': '象征表扬、表达、展示',
+            '称': '象征称赞、表扬、认可',
+            '美': '象征美好、美丽、善良',
+            '好': '象征美好、善良、优秀',
+            '优': '象征优秀、美好、杰出',
+            '秀': '象征优秀、美好、杰出',
+            '杰': '象征杰出、优秀、卓越',
+            '出': '象征杰出、优秀、出众',
+            '卓': '象征卓越、杰出、优秀',
+            '越': '象征卓越、优秀、出众',
+            '异': '象征杰出、优秀、特别',
+            '凡': '象征非凡、杰出、优秀',
+            '众': '象征出众、优秀、杰出',
+            '同': '象征与众不同、独特、特别',
+            '独': '象征独特、特别、出众',
+            '特': '象征特别、独特、出众',
+            '新': '象征创新、新颖、独特',
+            '立': '象征独立、自主、出众',
+            '异': '象征独特、出众、创新',
+            '时': '象征时代、时尚、进步',
+            '俱': '象征与时俱进、进步、发展',
+            '进': '象征进步、发展、进取',
+            '增': '象征增长、进步、发展',
+            '长': '象征成长、进步、发展'
+        };
+
+        // 获取汉字的拼音
+        function getPinyin(char) {
+            return pinyinDict[char] || char;
+        }
+
+        // 获取名字的拼音
+        function getNamePinyin(name) {
+            return name.split('').map(char => getPinyin(char)).join(' ');
+        }
+
+        // 生成随机名字
+        function generateRandomNames(surname, nameLength, count = 10) {
+            const commonChars = '伟芳娜秀英美敏静强磊军洋勇艳杰娟涛丽霞莉燕玲玉华刚明超文成功梅兰竹菊山水日月星云春夏秋冬东南西北金木水火土仁义礼智信忠孝和平安温良恭俭让智勇双全德才兼备';
+            
+            const results = [];
+            
+            for (let i = 0; i < count; i++) {
+                let name = surname;
+                if (nameLength === 1) {
+                    name += commonChars.charAt(Math.floor(Math.random() * commonChars.length));
+                } else if (nameLength === 2) {
+                    name += commonChars.charAt(Math.floor(Math.random() * commonChars.length));
+                    name += commonChars.charAt(Math.floor(Math.random() * commonChars.length));
+                }
+                results.push(name);
+            }
+            
+            return results;
+        }
+
+        // 生成名字解释
+        function generateExplanation(name, surname) {
+            const givenName = name.substring(surname.length);
+            const pinyin = getNamePinyin(name);
+            
+            // 简单的五行分析（随机选择一个五行）
+            const elements = ['金', '木', '水', '火', '土'];
+            const randomElement = elements[Math.floor(Math.random() * elements.length)];
+            
+            // 生成名字寓意
+            let meaning = '';
+            for (let char of givenName) {
+                meaning += nameMeaningDict[char] || '象征美好、吉祥';
+                if (givenName.length > 1 && char !== givenName[givenName.length - 1]) {
+                    meaning += '，';
+                }
+            }
+            
+            let explanation = `
+                <div class="name-explanation">
+                    <p class="explanation-title">名字解析：</p>
+                    <p>• 姓名：${name}<span class="pinyin">${pinyin}</span></p>
+                    <p>• 姓氏：${surname}</p>
+                    <p>• 名字：${givenName}</p>
+                    <p>• 拼音：${pinyin}</p>
+                    <p>• 五行属性：${randomElement}</p>
+                    <p>• 名字寓意：${meaning}</p>
+                    <p>• 整体含义：${surname}${givenName}这个名字朗朗上口，寓意美好，蕴含着对孩子未来的美好期望，希望孩子能够健康成长，成为一个${meaning.split('，')[0]}的人。</p>
+                    <p>• 五行解说：根据五行理论，${randomElement}属性的名字能够平衡八字，增强运势，适合${randomElement}属性较弱的人使用。</p>
+                </div>
+            `;
+            
+            return explanation;
+        }
+
+        // 复制功能
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('复制成功！');
+            }).catch(err => {
+                console.error('复制失败：', err);
+            });
+        }
+
+        // 绑定按钮事件
+        document.getElementById('generateName').addEventListener('click', function() {
+            const surname = document.getElementById('surname').value.trim();
+            const nameLength = document.querySelector('input[name="nameLength"]:checked').value;
+            
+            if (!surname) {
+                alert('请输入姓氏');
+                return;
+            }
+            
+            // 生成名字
+            const names = generateRandomNames(surname, parseInt(nameLength));
+            
+            // 显示结果
+            const resultContainer = document.getElementById('nameResults');
+            resultContainer.innerHTML = '';
+            
+            names.forEach(name => {
+                const nameElement = document.createElement('div');
+                nameElement.className = 'name-suggestion';
+                nameElement.innerHTML = `
+                    <h3>${name}<span class="pinyin">${getNamePinyin(name)}</span></h3>
+                    ${generateExplanation(name, surname)}
+                    <button class="copy-btn" onclick="copyToClipboard('${name} ${getNamePinyin(name)}\n${generateExplanation(name, surname).replace(/<[^>]*>/g, '')}')">一键复制</button>
+                `;
+                resultContainer.appendChild(nameElement);
+            });
+        });
+    </script>
+</body>
+</html>
